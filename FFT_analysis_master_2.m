@@ -14,7 +14,7 @@ FFT                         %subfunction 3, labeled at beginning and end
 %% 01: GLOBALS
 % definde global variables
 
-
+global listOfFileNames
 
 %% 02: DATA MANAGMENT
 % load data
