@@ -138,15 +138,16 @@ df=FS/L;                    %frequency resolution
 sampleIndex = -L/2:L/2-1;   %ordered index for FFT plot
 f=sampleIndex*df;           %x-axis index converted to ordered frequencies
 
-index_0 = knnsearch(f',0);
-X = X((index_0-1):end);
-f = f((index_0-1):end);
+index_0 = knnsearch(f',0);  % index where f is zero to select only positive fs later
+X = X((index_0-1):end);     % select only amplitudes for positive fs
+f = f((index_0-1):end);     % select only positive fs
 
-[~,lc1] = findpeaks(abs(X),'SortStr','descend','NPeaks',11); %finds 11 highest peaks
+[~,lc1] = findpeaks(abs(X),'SortStr','descend','NPeaks',11); %finds 10 (+1, because 0 is highest) highest peaks
 %highest peak in this is somewhere real close to 0 Hz ->
 %zero-bin-component/DC-component
-P1peakP = X(lc1);           %Amplitude of 10 highest peaks
-P1peakFreq = f(lc1);        %frequency of 10 highest peaks
+
+P1peakP = X(lc1);           %Amplitude of 10 (+1) highest peaks
+P1peakFreq = f(lc1);        %frequency of 10 (+1)highest peaks
 
 
 if P1peakFreq(1,1) ~=0                          %account for shift in zero-bin component
@@ -155,10 +156,8 @@ else
 P1peakFreq(1,:) = P1peakFreq;
 end
 
-%P1peakFreq = P1peakFreq(P1peakFreq >= 0);   %frequency of highest positive peaks
-%P1peakP = P1peakP(P1peakFreq >= 0);         %Amplitude of highest peaks in positive frequency range
-
-X_plot(1:length(X)) = 0;
+X_plot(1:length(X)) = 0;        % save data differently for plot: only highest peaks are shown
+                                % everything else is set to 0
 X_plot(lc1) = P1peakP;
 
 %Step five: calculate goodness-of-fit values 
@@ -194,35 +193,25 @@ else
 end 
     bestf(i,3) = num2cell(L);                    % FFT Length
     bestf(i,6)= {ioi};                           % IOI Sequence
-    bestf(i,8) = num2cell(df);                                 % Frequency resolution
+    bestf(i,8) = num2cell(df);                   % Frequency resolution
 
-% 10 peaks not only highest peak
-% lc1 is storing the indexes of 20 highest peaks 
+% get additional high peaks  
 
 for x= 1:length(P1peakP)
     
-P10_peaks = P1peakP(x);           %Amplitude of x highest peak
-P10_freq = P1peakFreq(x);
+P10_peaks = P1peakP(x);           %Amplitude of 10 highest peak
+P10_freq = P1peakFreq(x);         % corresponding frequencies
 
-
-    %GOF     = abs(P10_peaks(x))/abs(P10_peaks(1)); 
     nGOF   = abs(P10_peaks)/(L*abs(P1peakP(1)));
-
 
 P10(x,1) = nGOF;
 P10(x,2) = P10_freq;
 
 end
-%[C,ia] = unique(abs(P10(:,2)));
-%P10_freq = unique(abs(P10(:,2)));
-%P10_nGOF = P10(ia, 1)
 
-%P10(:,1) = P10_freq;
-%P10(:,2) = P10_nGOF;
+bestf(i,9) = {P10};         %information on 10 highest peaks (f and nGOF) is stored in additional column
 
-bestf(i,9) = {P10};
-
-% % to plot with stem
+% % to plot with stem, only highest peaks are shown
  figure
  stem(f,abs(X_plot));             %magnitudes vs frequencies
  xlabel('f (Hz)'); ylabel('|X|');
@@ -240,10 +229,6 @@ bestf(:,4)=listOfFileNames;                     %original FileName
 save(['FFT_' savename '_fs200.mat'], ['bestf']);    %save 'bestf' in .mat file, change fs200 to fs1000 if needed
 %xlswrite(['FFT_' savename '_fs200.xlsx'], bestf);   %save 'bestf' in .xlsx file, change fs200 to fs 1000 if needed
 
-% % to plot with stem
- figure
- stem(f,abs(X_plot));             %magnitudes vs frequencies
- xlabel('f (Hz)'); ylabel('|X(k)|');
 end                             
 
 
